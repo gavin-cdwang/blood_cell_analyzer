@@ -42,14 +42,7 @@
 		default-brightness-level = <5>;
 	};
 	/* 4.3 inch, 480x272 resolution LCD, MYiR */
-/*	
-	lcd_bl: backlight {
-		compatible = "pwm-backlight";
-		pwms = <&ecap0 0 50000 PWM_POLARITY_INVERTED>;
-		brightness-levels = <0 1 5 20 40 80 160 200 255>;
-		default-brightness-level = <2>;
-	};
-*/	
+	
 	gpio_keys: gpio_key_pads@0 {
 		compatible = "gpio-keys";
 		#address-cells = <1>;
@@ -111,8 +104,8 @@
 
 		panel-timing {
 			clock-frequency = <36000000>;
-			hactive = <800>;
-			vactive = <480>;
+			hactive = <1024>;
+			vactive = <768>;
 			hfront-porch = <210>;
 			hback-porch = <1>;
 			hsync-len = <43>;
@@ -223,75 +216,113 @@
 
 	i2c1_pins_default: i2c1_pins_default {
 		pinctrl-single,pins = <
-			0x240 ( PIN_INPUT_PULLUP | SLEWCTRL_FAST | MUX_MODE1 ) /* (G20) gpio5_10.I2C1_SCL */
-			0x248 ( PIN_INPUT_PULLUP | SLEWCTRL_FAST | MUX_MODE1 ) /* (E25) gpio5_12.I2C1_SDA */
+		//	0x240 ( PIN_INPUT_PULLUP | SLEWCTRL_FAST | MUX_MODE1 ) /* (G20) gpio5_10.I2C1_SCL */
+		//	0x248 ( PIN_INPUT_PULLUP | SLEWCTRL_FAST | MUX_MODE1 ) /* (E25) gpio5_12.I2C1_SDA */
+		// add by wangp:
+			0x208 ( PIN_INPUT_PULLUP | SLEWCTRL_FAST | MUX_MODE3 ) /* (AE18) cam0_data0.I2C1_SDA */
+			0x20c ( PIN_INPUT_PULLUP | SLEWCTRL_FAST | MUX_MODE3 ) /* (AB18) cam0_data0.I2C1_SCL */
 		>;
 	};
 
 	i2c1_pins_sleep: i2c1_pins_sleep {
 		pinctrl-single,pins = <
-			0x240 (PIN_INPUT_PULLUP | MUX_MODE7)
-			0x248 (PIN_INPUT_PULLUP | MUX_MODE7)
+		//	0x240 (PIN_INPUT_PULLUP | MUX_MODE7)
+		//	0x248 (PIN_INPUT_PULLUP | MUX_MODE7)
+			0x208 (PIN_INPUT_PULLUP | MUX_MODE7)
+			0x20c (PIN_INPUT_PULLUP | MUX_MODE7)			
 		>;
 	};
 
+	//wangp:dev board use mmc0 for sdcard; but mayi board use cam1 pin(MMC2) for sdcard;
 	mmc1_pins_default: pinmux_mmc1_pins_default {
 		pinctrl-single,pins = <
-			0x100 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_clk.mmc0_clk */
-			0x104 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_cmd.mmc0_cmd */
-			0x0f0 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat0.mmc0_dat0 */
-			0x0f4 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat1.mmc0_dat1 */
-			0x0f8 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat2.mmc0_dat2 */
-			0x0fc (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat3.mmc0_dat3 */
-			0x160 (PIN_INPUT | MUX_MODE7) /* spi0_cs1.gpio0_6 */
+		//	0x100 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_clk.mmc0_clk */
+		//	0x104 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_cmd.mmc0_cmd */
+		//	0x0f0 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat0.mmc0_dat0 */
+		//	0x0f4 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat1.mmc0_dat1 */
+		//	0x0f8 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat2.mmc0_dat2 */
+		//	0x0fc (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat3.mmc0_dat3 */
+		//	0x160 (PIN_INPUT | MUX_MODE7) /* spi0_cs1.gpio0_6 for sdcd */	
+		/*  add cam1 pin for sdcard */
+			0x1f0 (PIN_INPUT_PULLUP | MUX_MODE3) /* (AD21) cam1_data2.mmc2_clk */
+			0x1f4 (PIN_INPUT_PULLUP | MUX_MODE3) /* (AE22) cam1_data3.mmc2_cmd */
+			0x1f8 (PIN_INPUT_PULLUP | MUX_MODE3) /* (AD22) cam1_data4.mmc2_dat0 */
+			0x1fc (PIN_INPUT_PULLUP | MUX_MODE3) /* (AE23) cam1_data5.mmc2_dat1 */
+			0x200 (PIN_INPUT_PULLUP | MUX_MODE3) /* (AD23) cam1_data6.mmc2_dat2 */
+			0x204 (PIN_INPUT_PULLUP | MUX_MODE3) /* (AE24) cam1_data7.mmc2_dat3 */
+			0x074 (PIN_INPUT | MUX_MODE7) /* gpmc_wpn.gpio0_31 for sdcd */
 		>;
 	};
 
 	mmc1_pins_sleep: pinmux_mmc1_pins_sleep {
 		pinctrl-single,pins = <
-			0x100 (PIN_INPUT_PULLDOWN | MUX_MODE7)
+		/*	0x100 (PIN_INPUT_PULLDOWN | MUX_MODE7)
 			0x104 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)
 			0x0f0 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)
 			0x0f4 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)
 			0x0f8 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)
 			0x0fc (PIN_INPUT | PULL_DISABLE | MUX_MODE7)
-			0x160 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)
+			0x160 (PIN_INPUT | PULL_DISABLE | MUX_MODE7) */
+		/*  add cam1 pin for sdcard */
+			0x1f0 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (AD21) cam1_data2.mmc2_clk */
+			0x1f4 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (AE22) cam1_data3.mmc2_cmd */
+			0x1f8 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (AD22) cam1_data4.mmc2_dat0 */
+			0x1fc (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (AE23) cam1_data5.mmc2_dat1 */
+			0x200 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (AD23) cam1_data6.mmc2_dat2 */
+			0x204 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (AE24) cam1_data7.mmc2_dat3 */
+			0x074 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)	
 		>;
 	};
 
+	/* wangp:dev board use gpmc pinmux for emmc ,but mayi board use mmc0 for emmc  */
 	emmc_pins_default: emmc_pins_default {
 		pinctrl-single,pins = <
-			0x80 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (B9) gpmc_csn1.mmc1_clk */
-			0x84 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (F10) gpmc_csn2.mmc1_cmd */
-			0x00 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (B5) gpmc_ad0.mmc1_dat0 */
-			0x04 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (A5) gpmc_ad1.mmc1_dat1 */
-			0x08 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (B6) gpmc_ad2.mmc1_dat2 */
-			0x0c ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (A6) gpmc_ad3.mmc1_dat3 */
-			0x10 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (B7) gpmc_ad4.mmc1_dat4 */
-			0x14 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (A7) gpmc_ad5.mmc1_dat5 */
-			0x18 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (C8) gpmc_ad6.mmc1_dat6 */
-			0x1c ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (B8) gpmc_ad7.mmc1_dat7 */
+		//	0x80 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (B9) gpmc_csn1.mmc1_clk */
+		//	0x84 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (F10) gpmc_csn2.mmc1_cmd */
+		//	0x00 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (B5) gpmc_ad0.mmc1_dat0 */
+		//	0x04 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (A5) gpmc_ad1.mmc1_dat1 */
+		//	0x08 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (B6) gpmc_ad2.mmc1_dat2 */
+		//	0x0c ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (A6) gpmc_ad3.mmc1_dat3 */
+		//	0x10 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (B7) gpmc_ad4.mmc1_dat4 */
+		//	0x14 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (A7) gpmc_ad5.mmc1_dat5 */
+		//	0x18 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (C8) gpmc_ad6.mmc1_dat6 */
+		//	0x1c ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (B8) gpmc_ad7.mmc1_dat7 */
+		/* wangp:add mmc0 pin mux for emmc */
+			0x100 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_clk.mmc0_clk */
+			0x104 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_cmd.mmc0_cmd */
+			0x0f0 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat3.mmc0_dat3 */
+			0x0f4 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat2.mmc0_dat2 */
+			0x0f8 (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat1.mmc0_dat1 */
+			0x0fc (PIN_INPUT_PULLUP | MUX_MODE0) /* mmc0_dat0.mmc0_dat0 */	
 		>;
 	};
 
 	emmc_pins_sleep: emmc_pins_sleep {
 		pinctrl-single,pins = <
-			0x80 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B9) gpmc_csn1.mmc1_clk */
-			0x84 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (F10) gpmc_csn2.mmc1_cmd */
-			0x00 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B5) gpmc_ad0.mmc1_dat0 */
-			0x04 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (A5) gpmc_ad1.mmc1_dat1 */
-			0x08 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B6) gpmc_ad2.mmc1_dat2 */
-			0x0c (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (A6) gpmc_ad3.mmc1_dat3 */
-			0x10 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B7) gpmc_ad4.mmc1_dat4 */
-			0x14 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (A7) gpmc_ad5.mmc1_dat5 */
-			0x18 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (C8) gpmc_ad6.mmc1_dat6 */
-			0x1c (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B8) gpmc_ad7.mmc1_dat7 */
+		//	0x80 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B9) gpmc_csn1.mmc1_clk */
+		//	0x84 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (F10) gpmc_csn2.mmc1_cmd */
+		//	0x00 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B5) gpmc_ad0.mmc1_dat0 */
+		//	0x04 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (A5) gpmc_ad1.mmc1_dat1 */
+		//	0x08 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B6) gpmc_ad2.mmc1_dat2 */
+		//	0x0c (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (A6) gpmc_ad3.mmc1_dat3 */
+		//	0x10 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B7) gpmc_ad4.mmc1_dat4 */
+		//	0x14 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (A7) gpmc_ad5.mmc1_dat5 */
+		//	0x18 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (C8) gpmc_ad6.mmc1_dat6 */
+		//	0x1c (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (B8) gpmc_ad7.mmc1_dat7 */
+		/* add by wangp: mmc0 pin mux for emmc */
+			0x100 (PIN_INPUT_PULLDOWN | MUX_MODE7)  /* mmc0_clk.mmc0_clk */
+			0x104 (PIN_INPUT_PULLDOWN | MUX_MODE7)  /* mmc0_cmd.mmc0_cmd */
+			0x0f0 (PIN_INPUT_PULLDOWN | MUX_MODE7)  /* mmc0_dat3.mmc0_dat3 */
+			0x0f4 (PIN_INPUT_PULLDOWN | MUX_MODE7)  /* mmc0_dat2.mmc0_dat2 */
+			0x0f8 (PIN_INPUT_PULLDOWN | MUX_MODE7)  /* mmc0_dat1.mmc0_dat1 */
+			0x0fc (PIN_INPUT_PULLDOWN | MUX_MODE7)  /* mmc0_dat0.mmc0_dat0 */	
 		>;
 	};
 
 	ecap0_pins_default: backlight_pins_default {
 		pinctrl-single,pins = <
 			0x164 MUX_MODE0       /* eCAP0_in_PWM0_out.eCAP0_in_PWM0_out MODE0 */
+			//0x164 (PIN_OUTPUT_PULLUP | MUX_MODE7)
 		>;
 	};
 
@@ -409,65 +440,173 @@
 
 	qspi1_default: qspi1_default {
 		pinctrl-single,pins = <
-			0x7c (PIN_INPUT_PULLUP | MUX_MODE3)
-			0x88 (PIN_INPUT_PULLUP | MUX_MODE2)
-			0x90 (PIN_INPUT_PULLUP | MUX_MODE3)
-			0x94 (PIN_INPUT_PULLUP | MUX_MODE3)
-			0x98 (PIN_INPUT_PULLUP | MUX_MODE3)
-			0x9c (PIN_INPUT_PULLUP | MUX_MODE3)
+		/* add by wangp: dev board use multi nand(gpmc),but mayi board use cam0_data2~cam0_data6 */
+		//	0x7c (PIN_INPUT_PULLUP | MUX_MODE3) //qspi_csn /gpmc_csn0
+		//	0x88 (PIN_INPUT_PULLUP | MUX_MODE2) //clk
+		//	0x90 (PIN_INPUT_PULLUP | MUX_MODE3)
+		//	0x94 (PIN_INPUT_PULLUP | MUX_MODE3)
+		//	0x98 (PIN_INPUT_PULLUP | MUX_MODE3)
+		//	0x9c (PIN_INPUT_PULLUP | MUX_MODE3)
+		// add by wangp:
+			0x210 (PIN_INPUT_PULLUP | MUX_MODE3) /* cam0_data2.qspi_clk */
+			0x214 (PIN_INPUT_PULLUP | MUX_MODE3) /* cam0_data3.qspi_csn  ,cs signal not connect to cs0,how to config the cs????????? */
+			0x218 (PIN_INPUT_PULLUP | MUX_MODE3) /* cam0_data4.qspi_d0 */
+			0x21c (PIN_INPUT_PULLUP | MUX_MODE3) /* cam0_data5.qspi_d1 */
+			0x220 (PIN_INPUT_PULLUP | MUX_MODE3) /* cam0_data6.qspi_d2 */
+			0x224 (PIN_INPUT_PULLUP | MUX_MODE3) /* cam0_data7.qspi_d3 */
 		>;
 	};
 
-	nand_flash_x8_default: nand_flash_x8_default {
+/////////////////////disable  nand ,mayi board not use nand/////////////////////////////////////////////////
+//	nand_flash_x8_default: nand_flash_x8_default {
+//		pinctrl-single,pins = <
+//			0x0  (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad0.gpmc_ad0 */
+//			0x4  (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad1.gpmc_ad1 */
+//			0x8  (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad2.gpmc_ad2 */
+//			0xc  (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad3.gpmc_ad3 */
+//			0x10 (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad4.gpmc_ad4 */
+//			0x14 (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad5.gpmc_ad5 */
+//			0x18 (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad6.gpmc_ad6 */
+//			0x1c (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad7.gpmc_ad7 */
+//			0x70 (PIN_INPUT_PULLUP | MUX_MODE0)	/* gpmc_wait0.gpmc_wait0 */
+//			0x74 (PIN_OUTPUT_PULLUP | MUX_MODE7)	/* gpmc_wpn.gpmc_wpn */
+//			0x7c (PIN_OUTPUT | MUX_MODE0)		/* gpmc_csn0.gpmc_csn0  */
+//			0x90 (PIN_OUTPUT | MUX_MODE0)		/* gpmc_advn_ale.gpmc_advn_ale */
+//			0x94 (PIN_OUTPUT | MUX_MODE0)		/* gpmc_oen_ren.gpmc_oen_ren */
+//			0x98 (PIN_OUTPUT | MUX_MODE0)		/* gpmc_wen.gpmc_wen */
+//			0x9c (PIN_OUTPUT | MUX_MODE0)		/* gpmc_be0n_cle.gpmc_be0n_cle */
+//		>;
+//	};
+
+//	nand_flash_x8_sleep: nand_flash_x8_sleep {
+//		pinctrl-single,pins = <
+//			0x0  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad0.gpmc_ad0 */
+//			0x4  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad1.gpmc_ad1 */
+//			0x8  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad2.gpmc_ad2 */
+//			0xc  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad3.gpmc_ad3 */
+//			0x10 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad4.gpmc_ad4 */
+//			0x14 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad5.gpmc_ad5 */
+//			0x18 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad6.gpmc_ad6 */
+//			0x1c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad7.gpmc_ad7 */
+//			0x70 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)	/* gpmc_wait0.gpmc_wait0 */
+//			0x74 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_wpn.gpmc_wpn */
+//			0x7c (PIN_INPUT | PULL_DISABLE | MUX_MODE7)		/* gpmc_csn0.gpmc_csn0  */
+//			0x90 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)		/* gpmc_advn_ale.gpmc_advn_ale */
+//			0x94 (PIN_INPUT_PULLDOWN | MUX_MODE7)		/* gpmc_oen_ren.gpmc_oen_ren */
+//			0x98 (PIN_INPUT_PULLDOWN |  MUX_MODE7)		/* gpmc_wen.gpmc_wen */
+//			0x9c (PIN_INPUT | PULL_DISABLE | MUX_MODE7)		/* gpmc_be0n_cle.gpmc_be0n_cle */
+//		>;
+//	};
+
+
+	mayi_fpga_default: mayi_fpga_default {
 		pinctrl-single,pins = <
-			0x0  (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad0.gpmc_ad0 */
-			0x4  (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad1.gpmc_ad1 */
-			0x8  (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad2.gpmc_ad2 */
-			0xc  (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad3.gpmc_ad3 */
-			0x10 (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad4.gpmc_ad4 */
-			0x14 (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad5.gpmc_ad5 */
-			0x18 (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad6.gpmc_ad6 */
-			0x1c (PIN_INPUT  | MUX_MODE0)	/* gpmc_ad7.gpmc_ad7 */
-			0x70 (PIN_INPUT_PULLUP | MUX_MODE0)	/* gpmc_wait0.gpmc_wait0 */
-			0x74 (PIN_OUTPUT_PULLUP | MUX_MODE7)	/* gpmc_wpn.gpmc_wpn */
-			0x7c (PIN_OUTPUT | MUX_MODE0)		/* gpmc_csn0.gpmc_csn0  */
-			0x90 (PIN_OUTPUT | MUX_MODE0)		/* gpmc_advn_ale.gpmc_advn_ale */
-			0x94 (PIN_OUTPUT | MUX_MODE0)		/* gpmc_oen_ren.gpmc_oen_ren */
-			0x98 (PIN_OUTPUT | MUX_MODE0)		/* gpmc_wen.gpmc_wen */
-			0x9c (PIN_OUTPUT | MUX_MODE0)		/* gpmc_be0n_cle.gpmc_be0n_cle */
+			0x0  (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad0.gpmc_ad0 */ //gpmc_ad[15:0]-->gpmc_ad[15:0]--->fpga_ad[15:0];
+			0x4  (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad1.gpmc_ad1 */
+			0x8  (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad2.gpmc_ad2 */
+			0xc  (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad3.gpmc_ad3 */
+			0x10 (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad4.gpmc_ad4 */
+			0x14 (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad5.gpmc_ad5 */
+			0x18 (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad6.gpmc_ad6 */
+			0x1c (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad7.gpmc_ad7 */
+			0x20  (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad8.gpmc_ad8 */
+			0x24  (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad9.gpmc_ad9 */
+			0x28  (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad10.gpmc_ad10 */
+			0x2c  (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad11.gpmc_ad11 */
+			0x30 (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad12.gpmc_ad12 */
+			0x34 (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad13.gpmc_ad13 */
+			0x38 (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad14.gpmc_ad14 */
+			0x3c (PIN_INPUT_PULLUP  | MUX_MODE0)	/* gpmc_ad15.gpmc_ad15 */
+			0x44  (PIN_OUTPUT_PULLDOWN | MUX_MODE0)	/* gpmc_a1.gpmc_a17 */   // gpmc_a[11:1]-->gpmc_a[27:17]--->fpga_a[26:16];
+			0x48  (PIN_OUTPUT_PULLDOWN  | MUX_MODE0)	/* gpmc_a2.gpmc_a18 */
+			0x4c  (PIN_OUTPUT_PULLDOWN  | MUX_MODE0)	/* gpmc_a3.gpmc_a19 */
+			0x50 (PIN_OUTPUT_PULLDOWN  | MUX_MODE0)	/* gpmc_a4.gpmc_a20 */
+			0x54 (PIN_OUTPUT_PULLDOWN  | MUX_MODE0)	/* gpmc_a5.gpmc_a21 */
+			0x58 (PIN_OUTPUT_PULLDOWN  | MUX_MODE0)	/* gpmc_a6.gpmc_a22 */
+			//0x5c (PIN_OUTPUT  | MUX_MODE4)	/* gpmc_a7.gpmc_a23 */
+			//0x60  (PIN_OUTPUT  | MUX_MODE4)	/* gpmc_a8.gpmc_a24 */
+			//0x64  (PIN_OUTPUT  | MUX_MODE4)	/* gpmc_a9.gpmc_a25 */
+			//0x68 (PIN_OUTPUT  | MUX_MODE4)	/* gpmc_a10.gpmc_a26 */
+			//0x6c (PIN_OUTPUT  | MUX_MODE4)	/* gpmc_a11.gpmc_a27*/			
+			0x7c (PIN_OUTPUT  | MUX_MODE0)		/* gpmc_csn0.gpmc_csn0  */
+			//0x84 (PIN_OUTPUT | MUX_MODE0)		/* gpmc_csn2.gpmc_csn2  */
+			//0x88 (PIN_OUTPUT | MUX_MODE0)		/* gpmc_csn2.gpmc_csn3  */
+			0x90 (PIN_OUTPUT_PULLUP | MUX_MODE0)		/* gpmc_advn_ale.gpmc_advn_ale */
+			0x94 (PIN_OUTPUT_PULLUP | MUX_MODE0)		/* gpmc_oen_ren.gpmc_oen_ren */
+			0x98 (PIN_OUTPUT_PULLUP | MUX_MODE0)		/* gpmc_wen.gpmc_wen */
+			0x9c (PIN_OUTPUT_PULLUP | MUX_MODE0)		/* gpmc_be0n_cle.gpmc_be0n_cle */
+			//0x8c (PIN_OUTPUT | MUX_MODE0)		/* gpmc_clk.gpmc_clk */
+			//0x40 (PIN_INPUT  | MUX_MODE7)	/* gpmc_a0.rsv6_cpu_fpga */		
+			//0x164 (PIN_OUTPUT_PULLUP | MUX_MODE7)       /* eCAP0_in_PWM0_out.eCAP0_in_PWM0_out MODE0 */
+			0x80 (PIN_INPUT | MUX_MODE7)		/* gpmc_csn1.gpmc_csn1  */    //for wbc interrupt
+			0x70 (PIN_INPUT | MUX_MODE7)	/* gpmc_wait0.gpmc_wait0 */  //for diff interrupt
+
 		>;
 	};
 
-	nand_flash_x8_sleep: nand_flash_x8_sleep {
+	mayi_fpga_sleep: mayi_fpga_sleep {
 		pinctrl-single,pins = <
-			0x0  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad0.gpmc_ad0 */
-			0x4  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad1.gpmc_ad1 */
+			0x0  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad0.gpmc_ad0 */  //gpmc_ad[15:0]-->gpmc_ad[15:0]--->fpga_ad[15:0];
+			0x4 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad1.gpmc_ad1 */
 			0x8  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad2.gpmc_ad2 */
 			0xc  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad3.gpmc_ad3 */
 			0x10 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad4.gpmc_ad4 */
 			0x14 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad5.gpmc_ad5 */
 			0x18 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad6.gpmc_ad6 */
 			0x1c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad7.gpmc_ad7 */
-			0x70 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)	/* gpmc_wait0.gpmc_wait0 */
-			0x74 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_wpn.gpmc_wpn */
+			0x20  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad8.gpmc_ad8 */
+			0x24  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad9.gpmc_ad9 */
+			0x28 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad10.gpmc_ad10 */
+			0x2c  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad11.gpmc_ad11 */
+			0x30(PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad12.gpmc_ad12 */
+			0x34 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad13.gpmc_ad13 */
+			0x38 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad14.gpmc_ad14 */
+			0x3c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_ad15.gpmc_ad15 */
+			0x44  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a1.gpmc_a17 */  // gpmc_a[11:1]-->gpmc_a[27:17]--->fpga_a[26:16];
+			0x48 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* gpmc_a2.gpmc_a18 */
+			0x4c  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a3.gpmc_a19 */
+			0x50 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a4.gpmc_a20 */
+			0x54 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a5.gpmc_a21 */
+			0x58 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a6.gpmc_a22 */
+			0x5c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a7.gpmc_a23 */
+			0x60  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a8.gpmc_a24 */
+			0x64  (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a9.gpmc_a25 */
+			0x68 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a10.gpmc_a26 */
+			0x6c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a11.gpmc_a27*/
+			//0x70 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)	/* gpmc_wait0.gpmc_wait0 */
 			0x7c (PIN_INPUT | PULL_DISABLE | MUX_MODE7)		/* gpmc_csn0.gpmc_csn0  */
 			0x90 (PIN_INPUT | PULL_DISABLE | MUX_MODE7)		/* gpmc_advn_ale.gpmc_advn_ale */
 			0x94 (PIN_INPUT_PULLDOWN | MUX_MODE7)		/* gpmc_oen_ren.gpmc_oen_ren */
 			0x98 (PIN_INPUT_PULLDOWN |  MUX_MODE7)		/* gpmc_wen.gpmc_wen */
 			0x9c (PIN_INPUT | PULL_DISABLE | MUX_MODE7)		/* gpmc_be0n_cle.gpmc_be0n_cle */
+			0x8c (PIN_INPUT | PULL_DISABLE | MUX_MODE7)	/* gpmc_clk.gpmc_clk */
+			0x40(PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a0.rsv6_cpu_fpga */
+			0x80 (PIN_OUTPUT | MUX_MODE7)		/* gpmc_csn1.gpmc_csn1  */    //for wbc interrupt
+			0x70 (PIN_OUTPUT | MUX_MODE7)	/* gpmc_wait0.gpmc_wait0 */  //for diff interrupt
+
 		>;
 	};
 
+
 	dss_pinctrl_default: dss_pinctrl_default {
 		pinctrl-single,pins = <
-			0x020 (PIN_OUTPUT_PULLUP | MUX_MODE1) /*gpmc ad 8 -> DSS DATA 23 */
-			0x024 (PIN_OUTPUT_PULLUP | MUX_MODE1)
+		//	0x020 (PIN_OUTPUT_PULLUP | MUX_MODE1) /*gpmc ad 8 -> DSS DATA 23 */ //wangp:gpmc ad8~ad15 use for fpga,and mayi use 16bit lcd,so mark these pin;
+		/*	0x024 (PIN_OUTPUT_PULLUP | MUX_MODE1)
 			0x028 (PIN_OUTPUT_PULLUP | MUX_MODE1)
 			0x02C (PIN_OUTPUT_PULLUP | MUX_MODE1)
 			0x030 (PIN_OUTPUT_PULLUP | MUX_MODE1)
 			0x034 (PIN_OUTPUT_PULLUP | MUX_MODE1)
-			0x038 (PIN_OUTPUT_PULLUP | MUX_MODE1)
-			0x03C (PIN_OUTPUT_PULLUP | MUX_MODE1) /*gpmc ad 15 -> DSS DATA 16 */
+			0x038 (PIN_OUTPUT_PULLUP | MUX_MODE1) */
+		//	0x03C (PIN_OUTPUT_PULLUP | MUX_MODE1) /*gpmc ad 15 -> DSS DATA 16 */
+
+			0x1b0 (PIN_OUTPUT_PULLUP | MUX_MODE2) /*cam0_hd -> DSS DATA 23 */
+			0x1b4 (PIN_OUTPUT_PULLUP | MUX_MODE2) /*cam0_vd -> DSS DATA 22 */
+			0x1b8 (PIN_OUTPUT_PULLUP | MUX_MODE2) /*cam0_field-> DSS DATA 21 */
+			0x1bc (PIN_OUTPUT_PULLUP | MUX_MODE2) /*cam0_wen -> DSS DATA 20 */
+			0x1c0 (PIN_OUTPUT_PULLUP | MUX_MODE2) /*cam0_pclk-> DSS DATA 19 */
+			0x1c4 (PIN_OUTPUT_PULLUP | MUX_MODE2) /*cam0_data8 -> DSS DATA 18 */
+			0x1c8 (PIN_OUTPUT_PULLUP | MUX_MODE2) /*cam0_data9 -> DSS DATA 17 */
+			0x1cc (PIN_OUTPUT_PULLUP | MUX_MODE2) /*cam1_data9 -> DSS DATA 16 */
 			0x0a0 (PIN_OUTPUT_PULLUP | MUX_MODE0) /* DSS DATA 0 */
 			0x0a4 (PIN_OUTPUT_PULLUP | MUX_MODE0)
 			0x0a8 (PIN_OUTPUT_PULLUP | MUX_MODE0)
@@ -488,20 +627,22 @@
 			0x0e4 (PIN_OUTPUT_PULLUP | MUX_MODE0) /* DSS HSYNC */
 			0x0e8 (PIN_OUTPUT_PULLUP | MUX_MODE0) /* DSS PCLK */
 			0x0ec (PIN_OUTPUT_PULLUP | MUX_MODE0) /* DSS AC BIAS EN */
-			0x26c ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (T23) spi2_cs0.gpio3[25]  GPIO 3_25 for LCD_RESET */
+			0x68 (PIN_OUTPUT_PULLUP  | MUX_MODE7)	/* gpmc_a10.gpmc_a26 */
+			0x6c (PIN_OUTPUT_PULLUP | MUX_MODE7)	/* gpmc_a11.gpmc_a27*/
+			//0x26c ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (T23) spi2_cs0.gpio3[25]  GPIO 3_25 for LCD_RESET */
 		>;
 	};
 
 	dss_pinctrl_sleep: dss_pinctrl_sleep {
 		pinctrl-single,pins = <
-			0x020 (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
-			0x024 (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
-			0x028 (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
-			0x02C (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
-			0x030 (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
-			0x034 (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
-			0x038 (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
-			0x03C (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x1b0 (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7) /*cam0_hd -> DSS DATA 23 */
+			0x1b4 (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7) /*cam0_vd -> DSS DATA 22 */
+			0x1b8 (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7) /*cam0_field-> DSS DATA 21 */
+			0x1bc (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7) /*cam0_wen -> DSS DATA 20 */
+			0x1c0 (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7) /*cam0_pclk-> DSS DATA 19 */
+			0x1c4 (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7) /*cam0_data8 -> DSS DATA 18 */
+			0x1c8 (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7) /*cam0_data9 -> DSS DATA 17 */
+			0x1cc (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7) /*cam1_data9 -> DSS DATA 16 */
 			0x0A0 (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7)
 			0x0A4 (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7)
 			0x0A8 (DS0_PULL_UP_DOWN_EN | INPUT_EN | PULL_DISABLE | MUX_MODE7)
@@ -522,6 +663,8 @@
 			0x0E4 (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
 			0x0E8 (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
 			0x0EC (DS0_PULL_UP_DOWN_EN | PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x68 (PIN_OUTPUT_PULLUP  | MUX_MODE7)	/* gpmc_a10.gpmc_a26 */
+			0x6c (PIN_OUTPUT_PULLUP | MUX_MODE7)	/* gpmc_a11.gpmc_a27*/
 		>;
 	};
 
@@ -563,8 +706,8 @@
 			0x1C0 (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_pclk mode 0*/
 			0x1C4 (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_data8 mode 0*/
 			0x1C8 (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_data9 mode 0*/
-			0x208 (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_data0 mode 0*/
-			0x20C (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_data1 mode 0*/
+		//	0x208 (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_data0 mode 0*/
+		//	0x20C (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_data1 mode 0*/
 			0x210 (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_data2 mode 0*/
 			0x214 (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_data3 mode 0*/
 			0x218 (PIN_INPUT_PULLUP | MUX_MODE0)  /* cam0_data4 mode 0*/
@@ -583,8 +726,8 @@
 			0x1C0 (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_pclk mode 0*/
 			0x1C4 (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_data8 mode 0*/
 			0x1C8 (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_data9 mode 0*/
-			0x208 (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_data0 mode 0*/
-			0x20C (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_data1 mode 0*/
+		//	0x208 (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_data0 mode 0*/
+		//	0x20C (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_data1 mode 0*/
 			0x210 (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_data2 mode 0*/
 			0x214 (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_data3 mode 0*/
 			0x218 (DS0_PULL_UP_DOWN_EN | INPUT_EN | MUX_MODE7)  /* cam0_data4 mode 0*/
@@ -685,8 +828,8 @@
 	
 	leds_pins: leds_pins {
 		pinctrl-single,pins = <
-			0x60 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (F7) gpmc_a8.gpio1[24] */
-			0x64 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (B4) gpmc_a9.gpio1[25] */
+			//0x60 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (F7) gpmc_a8.gpio1[24] */
+			//0x64 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (B4) gpmc_a9.gpio1[25] */
 			0x68 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (G8) gpmc_a10.gpio1[26] */
 			0x6c ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (D8) gpmc_a11.gpio1[27] */
 		>;
@@ -784,12 +927,13 @@
 			0x25c (PIN_INPUT_PULLUP | MUX_MODE7  ) /* (N25) spi4_cs0.spi4_cs0 */
 		>;
 	};
-	
-	gpio0_pins: gpio0_pins_default {
-		pinctrl-single,pins = <
-			0x74 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (B3) gpmc_wpn.gpio0[31] */   // EMMC_RST
-		>;
-	};
+
+	/*  wangp: dev board use gpmc_wpn for emmc reset , mayi board use gpmc_wpn for sdcard MMC_SDCD pin ,so mask it  */
+//	gpio0_pins: gpio0_pins_default {
+//		pinctrl-single,pins = <
+//			0x74 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (B3) gpmc_wpn.gpio0[31] */   // EMMC_RST
+//		>;
+//	};
 
 
 	gpio3_pins: gpio3_pins_default {
@@ -860,10 +1004,12 @@
 	tps65218: tps65218@24 {
 		reg = <0x24>;
 		compatible = "ti,tps65218";
-		interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;
-		interrupt-controller;
-		#interrupt-cells = <2>;
-
+		//interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;
+		//interrupt-controller;
+		//#interrupt-cells = <2>;
+		interrupt-parent = <&gpio0>;
+		interrupts = <21 0>;
+		
 		dcdc1: regulator-dcdc1 {
 			compatible = "ti,tps65218-dcdc1";
 			/* VDD_CORE limits min of OPP50 and max of OPP100 */
@@ -1027,7 +1173,7 @@
 		VDDIO-supply = <&dcdc4>;
 	};
 
-
+/*
 	ov2659@30 {
 		compatible = "ovti,ov2659";
 		reg = <0x30>;
@@ -1041,6 +1187,7 @@
 			};
 		};
 	};
+*/	
 };
 
 &clkout2_ck {
@@ -1127,24 +1274,30 @@
 	status = "okay";
 };
 
-&mmc1 {
-	status = "okay";
+&mmc3 { //for sdcard on mmc2
+	status = "disabled";
 	vmmc-supply = <&dcdc4>;
 	bus-width = <4>;
+	dmas = <&edma_xbar 6 0 1>,
+		<&edma_xbar 7 0 2>;
+	dma-names = "tx", "rx";
+	
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&mmc1_pins_default>;
 	pinctrl-1 = <&mmc1_pins_sleep>;
-	cd-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+	//cd-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>; //add by wangp: sdcd use gpmc_wpn.gpio0_31 for sdcd;
 };
-/* eMMC sits on mmc2 */
-&mmc2 {
+
+/* eMMC sits on mmc0 */
+&mmc1 {
 	/*
 	 * When enabling eMMC, disable GPMC/NAND and set
 	 * SelEMMCorNAND to output-high
 	 */
 	status = "okay";
 	vmmc-supply = <&dcdc4>;
-	bus-width = <8>;
+	bus-width = <4>; // add by wangp: mayi board use 4bit emmc
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&emmc_pins_default>;
 	pinctrl-1 = <&emmc_pins_sleep>;
@@ -1156,7 +1309,7 @@
 };
 
 &usb1 {
-	dr_mode = "otg";
+	dr_mode = "host";
 	status = "okay";
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&usb1_pins_default>;
@@ -1168,7 +1321,7 @@
 };
 
 &usb2 {
-	dr_mode = "host";
+	dr_mode = "otg";
 	status = "okay";
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&usb2_pins_default>;
@@ -1207,98 +1360,166 @@
 	status = "okay";
 };
 
+/* add by wangp: mayi baord use gpmc for fpga */
 &gpmc {
+	status = "okay";
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mayi_fpga_default>;
+	pinctrl-1 = <&mayi_fpga_sleep>;
+
+	ranges = <0 0 0x08000000 0x04000000>;	/* mayi fpga on CS0 space. Min partition = 128MB */
+	fpga@0,0 {
+		compatible = "mayi,gpmc-fpga";
+		reg = <0 0 0x04000000>;	
+		bank-width = <2>;
+		gpmc,mux-add-data = <2>; //mux addr;
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 7 1>; //34
+		//interrupt-controller;
+		//interrupt-cells = <2>;
+
+		//interrupt-parent = <&gpio0>;
+		//interrupts = <30 1>;
+
+		//interrupt-parent = <&gpio1>;
+		//interrupts = <30 1>;
+
+		dmas = <&edma 33 0>,
+		<&edma 34 0>,
+		<&edma 35 0>;
+		dma-names = "rbc", "wbc", "diff";
+	
+		//interrupt-parent = <&gpio0>;
+		//interrupts = <21 0x2>;
+		//fpga-reset = <&gpio3 7 GPIO_ACTIVE_LOW>;
+		//fpga-ready = <&gpio0 12 GPIO_ACTIVE_HIGH>; //input ,check high is ready ok;
+		//gpmc,sync-clk-ps = <0>;
+		//gpmc,sync-read;
+		//gpmc,sync-write;
+		//gpmc,clk-activatiion-ns = <0>;
+		//gpmc,sync-clk-ps = <10000>;
+		
+		gpmc,cs-on-ns = <0>;
+		gpmc,cs-rd-off-ns = <70>;
+		gpmc,cs-wr-off-ns = <60>;
+		gpmc,adv-on-ns = <0>;
+		gpmc,adv-rd-off-ns = <30>;
+		gpmc,adv-wr-off-ns = <30>;
+		gpmc,we-on-ns = <30>;
+		gpmc,we-off-ns = <60>;
+		gpmc,oe-on-ns = <30>;
+		gpmc,oe-off-ns = <70>;
+		gpmc,access-ns = <60>;
+		gpmc,rd-cycle-ns = <70>;
+		gpmc,wr-cycle-ns = <60>;
+		
+		//gpmc,bus-turnaround-ns = <0>;
+		gpmc,cycle2cycle-delay-ns = <20>;
+		gpmc,cycle2cycle-samecsen = <10>;
+		gpmc,cycle2cycle-diffcsen = <0>;
+		gpmc,wr-access-ns = <60>; //?
+		gpmc,wr-data-mux-bus-ns = <30>;
+		gpmc,page-burst-access-ns = <10>;
+				
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};
+
+
+//&gpmc {
 	/*
 	 * When enabling NAND on GPMC, disable eMMC
 	 */
-	status = "disabled";
-	pinctrl-names = "default", "sleep";
-	pinctrl-0 = <&nand_flash_x8_default>;
-	pinctrl-1 = <&nand_flash_x8_sleep>;
-	ranges = <0 0 0x08000000 0x01000000>;	/* CS0 space. Min partition = 16MB */
-	nand@0,0 {
-		compatible = "ti,omap2-nand";
-		reg = <0 0 4>;		/* device IO registers */
-		interrupt-parent = <&gic>;
-		interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL_HIGH>;
-		ready-gpio = <&gpmc 0 GPIO_ACTIVE_HIGH>;	/* gpmc_wait0 */
-		ti,nand-ecc-opt = "bch16";
-		ti,elm-id = <&elm>;
-		nand-bus-width = <8>;
-		gpmc,device-width = <1>;
-		gpmc,sync-clk-ps = <0>;
-		gpmc,cs-on-ns = <0>;
-		gpmc,cs-rd-off-ns = <40>;
-		gpmc,cs-wr-off-ns = <40>;
-		gpmc,adv-on-ns = <0>;
-		gpmc,adv-rd-off-ns = <25>;
-		gpmc,adv-wr-off-ns = <25>;
-		gpmc,we-on-ns = <0>;
-		gpmc,we-off-ns = <20>;
-		gpmc,oe-on-ns = <3>;
-		gpmc,oe-off-ns = <30>;
-		gpmc,access-ns = <30>;
-		gpmc,rd-cycle-ns = <40>;
-		gpmc,wr-cycle-ns = <40>;
-		gpmc,bus-turnaround-ns = <0>;
-		gpmc,cycle2cycle-delay-ns = <0>;
-		gpmc,clk-activation-ns = <0>;
-		gpmc,wr-access-ns = <40>;
-		gpmc,wr-data-mux-bus-ns = <0>;
+//	status = "disabled";
+//	pinctrl-names = "default", "sleep";
+//	pinctrl-0 = <&nand_flash_x8_default>;
+//	pinctrl-1 = <&nand_flash_x8_sleep>;
+//	ranges = <0 0 0x08000000 0x01000000>;	/* CS0 space. Min partition = 16MB */
+//	nand@0,0 {
+//		compatible = "ti,omap2-nand";
+//		reg = <0 0 4>;		/* device IO registers */
+//		interrupt-parent = <&gic>;
+//		interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL_HIGH>;
+//		ready-gpio = <&gpmc 0 GPIO_ACTIVE_HIGH>;	/* gpmc_wait0 */
+//		ti,nand-ecc-opt = "bch16";
+//		ti,elm-id = <&elm>;
+//		nand-bus-width = <8>;
+//		gpmc,device-width = <1>;
+//		gpmc,sync-clk-ps = <0>;
+//		gpmc,cs-on-ns = <0>;
+//		gpmc,cs-rd-off-ns = <40>;
+//		gpmc,cs-wr-off-ns = <40>;
+//		gpmc,adv-on-ns = <0>;
+//		gpmc,adv-rd-off-ns = <25>;
+//		gpmc,adv-wr-off-ns = <25>;
+//		gpmc,we-on-ns = <0>;
+//		gpmc,we-off-ns = <20>;
+//		gpmc,oe-on-ns = <3>;
+//		gpmc,oe-off-ns = <30>;
+//		gpmc,access-ns = <30>;
+//		gpmc,rd-cycle-ns = <40>;
+//		gpmc,wr-cycle-ns = <40>;
+//		gpmc,bus-turnaround-ns = <0>;
+//		gpmc,cycle2cycle-delay-ns = <0>;
+//		gpmc,clk-activation-ns = <0>;
+//		gpmc,wr-access-ns = <40>;
+//		gpmc,wr-data-mux-bus-ns = <0>;
 		/* MTD partition table */
 		/* All SPL-* partitions are sized to minimal length
 		 * which can be independently programmable. For
 		 * NAND flash this is equal to size of erase-block */
-		#address-cells = <1>;
-		#size-cells = <1>;
-		partition@0 {
-			label = "NAND.SPL";
-			reg = <0x00000000 0x00040000>;
-		};
-		partition@1 {
-			label = "NAND.SPL.backup1";
-			reg = <0x00040000 0x00040000>;
-		};
-		partition@2 {
-			label = "NAND.SPL.backup2";
-			reg = <0x00080000 0x00040000>;
-		};
-		partition@3 {
-			label = "NAND.SPL.backup3";
-			reg = <0x000c0000 0x00040000>;
-		};
-		partition@4 {
-			label = "NAND.u-boot-spl-os";
-			reg = <0x00100000 0x00080000>;
-		};
-		partition@5 {
-			label = "NAND.u-boot";
-			reg = <0x00180000 0x00100000>;
-		};
-		partition@6 {
-			label = "NAND.u-boot-env";
-			reg = <0x00280000 0x00040000>;
-		};
-		partition@7 {
-			label = "NAND.u-boot-env.backup1";
-			reg = <0x002c0000 0x00040000>;
-		};
-		partition@8 {
-			label = "NAND.kernel";
-			reg = <0x00300000 0x00700000>;
-		};
-		partition@9 {
-			label = "NAND.file-system";
-			reg = <0x00a00000 0x1f600000>;
-		};
-	};
-};
+//		#address-cells = <1>;
+//		#size-cells = <1>;
+//		partition@0 {
+//			label = "NAND.SPL";
+//			reg = <0x00000000 0x00040000>;
+//		};
+//		partition@1 {
+//			label = "NAND.SPL.backup1";
+//			reg = <0x00040000 0x00040000>;
+//		};
+//		partition@2 {
+//			label = "NAND.SPL.backup2";
+//			reg = <0x00080000 0x00040000>;
+//		};
+//		partition@3 {
+//			label = "NAND.SPL.backup3";
+//			reg = <0x000c0000 0x00040000>;
+//		};
+//		partition@4 {
+//			label = "NAND.u-boot-spl-os";
+//			reg = <0x00100000 0x00080000>;
+//		};
+//		partition@5 {
+//			label = "NAND.u-boot";
+//			reg = <0x00180000 0x00100000>;
+//		};
+//		partition@6 {
+//			label = "NAND.u-boot-env";
+//			reg = <0x00280000 0x00040000>;
+//		};
+//		partition@7 {
+//			label = "NAND.u-boot-env.backup1";
+//			reg = <0x002c0000 0x00040000>;
+//		};
+//		partition@8 {
+//			label = "NAND.kernel";
+//			reg = <0x00300000 0x00700000>;
+//		};
+//		partition@9 {
+//			label = "NAND.file-system";
+//			reg = <0x00a00000 0x1f600000>;
+//		};
+//	};
+//};
 
 /* Enable qspi, 16MB S25FL128S norflash, MYiR */
 &qspi {
 	status = "okay";	/* Disable GPMC (NAND) when enabling QSPI */
 	pinctrl-names = "default";
-	pinctrl-0 = <&qspi1_default>;
+	//pinctrl-0 = <&qspi1_default>;
 
 	spi-max-frequency = <24000000>;
 	m25p80@0 {
@@ -1400,7 +1621,7 @@
 };
 
 &dss {
-	status = "ok";
+	status = "okay";
 
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&dss_pinctrl_default>;
@@ -1445,6 +1666,7 @@
 	};
 };
 
+/*
 &vpfe1 {
 	status = "okay";
 	pinctrl-names = "default", "sleep";
@@ -1461,6 +1683,7 @@
 		};
 	};
 };
+*/
 
 &mcasp0 {
 	#sound-dai-cells = <0>;

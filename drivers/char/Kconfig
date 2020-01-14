@@ -569,6 +569,7 @@ config UV_MMTIMER
 
 source "drivers/char/tpm/Kconfig"
 
+
 config TELCLOCK
 	tristate "Telecom clock driver for ATCA SBC"
 	depends on X86
@@ -610,6 +611,7 @@ config TILE_SROM
 	  how to partition a single ROM for multiple purposes.
 
 source "drivers/char/xillybus/Kconfig"
+source "drivers/char/mayi_fpga/Kconfig"
 
 endmenu
 

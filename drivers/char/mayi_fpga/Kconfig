@@ -1,0 +1,19 @@
+#
+# PCMCIA character device configuration
+#
+
+menu "kuake mayi character devices"
+
+config MAYI_GPMC_FPGA
+	tristate "MAYI GPMC FPGA device support"
+	help
+	  Enable support for kuake mayi fpga devices
+
+	  This driver may be built as a module ( = code which can be
+	  inserted in and removed from the running kernel whenever you want).
+	  The module will be called synclink_cs.  If you want to do that, say M
+	  here.
+
+
+endmenu
+

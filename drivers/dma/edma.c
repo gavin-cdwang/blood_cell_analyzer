@@ -419,6 +419,8 @@ static void edma_assign_priority_to_queue(struct edma_cc *ecc, int queue_no,
 {
 	int bit = queue_no * 4;
 
+	printk("edma_assign_priority_to_queue\n");
+
 	edma_modify(ecc, EDMA_QUEPRI, ~(0x7 << bit), ((priority & 0x7) << bit));
 }
 
@@ -667,7 +669,6 @@ static void edma_trigger_channel(struct edma_chan *echan)
 	struct edma_cc *ecc = echan->ecc;
 	int channel = EDMA_CHAN_SLOT(echan->ch_num);
 	unsigned int mask = BIT(channel & 0x1f);
-
 	edma_shadow0_write_array(ecc, SH_ESR, (channel >> 5), mask);
 
 	dev_dbg(ecc->dev, "ESR%d %08x\n", (channel >> 5),
@@ -698,6 +699,7 @@ static void edma_assign_channel_eventq(struct edma_chan *echan,
 	int channel = EDMA_CHAN_SLOT(echan->ch_num);
 	int bit = (channel & 0x7) * 4;
 
+	printk("eventq_no:%d\n", eventq_no);
 	/* default to low priority queue */
 	if (eventq_no == EVENTQ_DEFAULT)
 		eventq_no = ecc->default_queue;
@@ -827,6 +829,7 @@ static void edma_execute(struct edma_chan *echan)
 				  echan->ecc->dummy_slot);
 	}
 
+	
 	if (echan->missed) {
 		/*
 		 * This happens due to setup times between intermediate
@@ -842,7 +845,14 @@ static void edma_execute(struct edma_chan *echan)
 	} else if (edesc->processed <= MAX_NR_SG) {
 		dev_dbg(dev, "first transfer starting on channel %d\n",
 			echan->ch_num);
-		edma_start(echan);
+		if(echan->ch_num == 33 || echan->ch_num == 34 || echan->ch_num == 35){
+			//edma_clean_channel(echan);
+			//edma_stop(echan);
+			edma_start(echan);
+			edma_trigger_channel(echan);
+		}else
+			edma_start(echan);
+
 	} else {
 		dev_dbg(dev, "chan: %d: completed %d elements, resuming\n",
 			echan->ch_num, edesc->processed);
@@ -1134,8 +1144,13 @@ static struct dma_async_tx_descriptor *edma_prep_slave_sg(
 			edesc->pset[i].param.opt |= TCINTEN;
 
 		/* If this is the last set, enable completion interrupt flag */
-		if (i == sg_len - 1)
+		if (i == sg_len - 1) {			
 			edesc->pset[i].param.opt |= TCINTEN;
+		}
+
+		if(echan->ch_num == 33){
+			//edesc->pset[i].param.opt |= ITCCHEN;
+		}
 	}
 	edesc->residue_stat = edesc->residue;
 
