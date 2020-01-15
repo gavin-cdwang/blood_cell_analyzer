@@ -96,7 +96,7 @@ extern int diff_xfer_len[6000];
 #define HGB_READ_CNT 10
 
 //u16 hgb_buf[HGB_READ_CNT+1];
-char  hgb_buf[HGB_READ_CNT];
+u16  hgb_buf[HGB_READ_CNT];
 
 extern struct fpga_dev *g_fpga_dev;
 
@@ -2445,15 +2445,17 @@ void fpga_get_hgb_blank(u16 dev_no, u16 timout, int action, int p1, int p2, int 
 
 
 	fpga_info(("fpga_get_hgb_blank"));
-	memset(hgb_buf, 0, strlen(hgb_buf));
+	memset((u8 *)hgb_buf, 0, 20);
 
+	printk("fpga_get_hgb_blank\n");
 	while(hgb_cnt < HGB_READ_CNT) {
 		value = fpga_read_reg(g_fpga_dev,FPGA_SYS_CHAN_HGB);
 		hgb_buf[hgb_cnt++] = value;		
 		usleep_range(300,400); //A/D change need use 0.016ms * 16ch = 0.3ms;
+		printk("fpga_get_hgb_blank:%d \n", value);
 	}
 
-	encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_HGB,mri, hgb_buf,HGB_READ_CNT );
+	encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_HGB,mri, hgb_buf,HGB_READ_CNT*2);
 }
 
 //read 10 count hgb blood 
@@ -2465,15 +2467,18 @@ void fpga_get_hgb_blood(u16 dev_no, u16 timout, int action, int p1, int p2, int 
 
 	fpga_info(("fpga_get_hgb_blood"));
 
-	memset(hgb_buf, 0, strlen(hgb_buf));
+	printk("fpga_get_hgb_blood\n");
+	memset((u8 *)hgb_buf, 0, 20);
 #if 1
 	while(hgb_cnt < HGB_READ_CNT) {
 		value = fpga_read_reg(g_fpga_dev,FPGA_SYS_CHAN_HGB);
 		hgb_buf[hgb_cnt++] = value;		
 		usleep_range(300,400); //A/D change need use 0.016ms * 16ch = 0.3ms;
+		
+		printk("%d \n", value);
 	}
 #endif	
-	encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_HGB,mri, hgb_buf,HGB_READ_CNT );
+	encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_HGB,mri, hgb_buf,HGB_READ_CNT*2 );
 	
 }
 

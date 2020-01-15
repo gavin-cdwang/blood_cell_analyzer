@@ -688,9 +688,9 @@ static int fpga_dma_rbc_mcpy_transfer(struct fpga_dev *priv, dma_addr_t dma_dst,
 	difftm1 =  ((tm3.tv_sec*1000*1000 + tm3.tv_nsec/1000 ) -	(tm2.tv_sec*1000*1000 + tm2.tv_nsec/1000 ));
 
 	printk("dma cpy time:%d\n", difftm1);
-	//for(i = 0; i< 1000000;i++)
-		//printk("%u " ,((u32 *)((unsigned int)g_fpga_dev->rbcout_addr))[i] );
-	//printk("\n");
+	for(i = 0; i< 100;i++)
+		printk("%u " ,((u32 *)((unsigned int)g_fpga_dev->rbcout_addr))[i] );
+	printk("\n");
 
 	ret = 0;
 err:
@@ -975,8 +975,7 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 	if(g_fpga_dev->pmri == NULL)
 		g_fpga_dev->pmri = &mri;
 	
-	fpga_write_reg(g_fpga_dev, 0x40004, 0); 
-	fpga_write_reg(g_fpga_dev, 0x40002, 0);
+
 
 	
 	//if(per_len >  50 /*&& !atomic_read(&priv->fifo_rbc_t)*/) { //2k fifo data per/time to send to userspace;
@@ -997,6 +996,9 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 		
 	}
 #endif
+
+	fpga_write_reg(g_fpga_dev, 0x40004, 0); 
+	fpga_write_reg(g_fpga_dev, 0x40002, 0);
 
 	getnstimeofday(&tm3);	
 
@@ -1030,9 +1032,11 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 
 
 	//getnstimeofday(&tm2);	
-	xfer_len = 5000000;
+	//xfer_len = 5000000;
+	//xfer_len =5000000;
+	xfer_len = 5000;
 
-	ret = fpga_dma_rbc_mcpy_transfer(priv, priv->rbcout_dma_addr,  priv->wbcout_dma_addr, xfer_len*sizeof(u32));
+	ret = fpga_dma_rbc_mcpy_transfer(priv, priv->rbcout_dma_addr,  dma_src, xfer_len*sizeof(u32));
 	
 
 }
@@ -1899,14 +1903,14 @@ static int gpmc_fpga_of_probe(struct platform_device *op)
 	/* set fpga work sequence time,in read caller */
 	//INIT_WORK(&priv->sys_float, fpga_sys_float_work);
 
-
+#if 1
 	ret = fpga_dma_init(priv,0);
 	if(ret != 0){
 		dev_err(priv->dev, "Register DMA  Failed\n");
 		goto out_destroy_workqueue;
 	}
 
-
+#endif
 
 	//fpga_dma_memcpy_init(priv,0);
 		
@@ -2323,7 +2327,7 @@ exit_thread:
 	printk("wbc_irq:%d  wbc_total:%d\n", wbc_irq, wbc_total);
 	printk("diff_irq:%d  diff_total:%d\n", diff_irq, diff_total);
 
-	
+#if 0	
 	printk("rbctime sch:dmatime\n");
 
 	for(i = 0, j=0; i< intcnt; ) {
@@ -2344,7 +2348,8 @@ exit_thread:
 	printk("\n");		
 
 	//fpga_info(("\tfpga_timseq_thread (pid:%d) end....",current->pid));
-	
+#endif
+
 	if(ft_timer)
 		kfree(ft_timer);
 	if(mri)
