@@ -68,6 +68,8 @@ extern int rbc_total;
 extern int rbc_irq;
 extern int rbctime[8000];
 extern int rbc_xfer_len[6000];
+extern int cpycnt;
+extern int rbc_cpy_time[6000];
 
 
 extern int wbc_fisrt_flag;
@@ -2501,6 +2503,10 @@ void fpga_get_fifo_rbc(u16 dev_no, u16 timout, int action, int p1, int p2, int p
 	rbc_end_rpt_flag = 0;
 	rbc_total = 0;
 	rbc_irq = 0;
+	cpycnt=0;
+	
+
+	memset(rbc_cpy_time, 0, 6000);
 	
 	memset(rbctime, 0, 8000);
 	
@@ -4161,7 +4167,7 @@ ssize_t sys_get_fifo_rbc(struct device *dev, struct device_attribute *attr,
 	   				const char *buf, size_t count)
 {
 
-	int ret;
+	int ret,i;
 
 	struct measure_related_info  mri;
 
@@ -4177,6 +4183,7 @@ ssize_t sys_get_fifo_rbc(struct device *dev, struct device_attribute *attr,
 	mri.m_ts_id=0x3344;
 
 	fpga_get_fifo_rbc(2,time,1,0,0,0,0, &mri);
+
 
 	printk("rbc time:%d\n" ,time );
 	return count;
@@ -4280,10 +4287,22 @@ ssize_t sys_trigger_rbc_dma(struct device *dev, struct device_attribute *attr,
 
 	//gpmc_fpga_fifo_init(g_fpga_dev);
 	//fpga_get_fifo_rbc(2,5000,1,0,0,0,0, (void *)0);
-	g_fpga_dev->test_flag = 0;
-	intcnt = 0;
-	memset(timearr, 0, 10);
-	memset(lenarr, 0, 10);
+	int i;
+
+	memset(g_fpga_dev->wbcout_addr, 0,   2*FIFO_DATA_DMA_SIZE);
+	memset(g_fpga_dev->rbcout_addr, 0,   2*FIFO_DATA_DMA_SIZE);
+
+	for(i = 0; i< 5000000;i++)
+		((u32 *)((unsigned int)g_fpga_dev->wbcout_addr))[i] = i+4;
+
+	printk("rbc buf:\n");
+	
+	//for(i = 0; i< 1000000;i++)
+		//printk("%u " ,((u32 *)((unsigned int)g_fpga_dev->wbcout_addr))[i] );
+	
+	printk("\n");
+
+
 	queue_work(g_fpga_dev->wqfifo,&g_fpga_dev->fifo_rbc); //read wq to handle dma data;
 	return count;
 }

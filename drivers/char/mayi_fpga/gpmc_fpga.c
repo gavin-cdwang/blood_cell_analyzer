@@ -61,6 +61,9 @@ int rbc_end_rpt_flag = 0;
 int rbc_total = 0;
 int rbc_irq = 0;
 int rbc_xfer_len[6000];
+int rbc_cpy_time[6000];
+int cpycnt;
+
 
 int wbc_fisrt_flag = 1;
 int wbc_per_len=0;
@@ -199,7 +202,7 @@ void fpga_disable_irq(struct fpga_dev *priv)
 
 
 struct timespec tm1, tm2, tm3, tm4,tm5,tm6;
-int lenarr[10],timearr[10], difftm1, difftm2;
+int lenarr[10],timearr[10], difftm1, difftm2,diffcpy;
 int intcnt = 0;
 
 
@@ -334,6 +337,15 @@ static void fpga_diff_dma_complete(void *args)
 	complete(&diffinfo_wait);
 }
 
+
+static void fpga_rbc_dma_memcpy_complete(void *args)
+{
+	struct fpga_dev *priv = (struct fpga_dev *)args;
+	struct dma_chan *chan = priv->fpga_rbc_dma_chan;
+
+	printk("fpga_rbc_dma_memcpy_complete\n");
+	complete(&rbcinfo_wait);
+}
 
 
 
@@ -620,6 +632,75 @@ err:
 	return ret;
 }
 
+
+static int fpga_dma_rbc_mcpy_transfer(struct fpga_dev *priv, dma_addr_t dma_dst, dma_addr_t dma_src, size_t len)
+{
+
+	struct dma_chan *chan = priv->fpga_rbc_dma_chan;
+	struct dma_device *dma_dev = chan->device;
+	enum dma_ctrl_flags flags = DMA_CTRL_ACK | DMA_PREP_INTERRUPT;
+	enum dma_status status;
+	struct dma_async_tx_descriptor *tx = NULL;
+	int ret=0,i;
+
+#if 0
+	struct dma_slave_config sconf;
+
+
+	sconf.direction = DMA_DEV_TO_MEM;
+	sconf.src_addr = priv->phys_addr + 2*FPGA_FIFO_DIFF_ADDR; 
+	
+	sconf.dst_addr =priv->rbcout_dma_addr;
+	sconf.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+	sconf.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
+	sconf.dst_maxburst = DMA_PER_TRANSFER_BUF;
+	sconf.src_maxburst = DMA_PER_TRANSFER_BUF;
+	//sconf.device_fc = 1;
+	dmaengine_slave_config(priv->fpga_diff_dma_chan, &sconf);
+
+#endif
+	getnstimeofday(&tm2);	
+
+	tx = dma_dev->device_prep_dma_memcpy(chan, (unsigned long)dma_dst, (unsigned long)dma_src,
+					     len, flags);
+	if (!tx) {
+		dev_err(priv->dev, "device_prep_dma_memcpy error\n");
+		ret = -EIO;
+		goto err;
+	}
+
+	
+ //change other way to  refer to omap_dmm_tiler.c
+	tx->callback = fpga_rbc_dma_memcpy_complete;
+	tx->callback_param = priv;
+
+	dmaengine_submit(tx);
+
+
+	dma_async_issue_pending(chan);
+
+
+	//ret = wait_for_completion_timeout(&sysinfo_wait, msecs_to_jiffies(50));
+	wait_for_completion(&rbcinfo_wait);
+	printk("dma success\n");
+
+	getnstimeofday(&tm3);	
+	difftm1 =  ((tm3.tv_sec*1000*1000 + tm3.tv_nsec/1000 ) -	(tm2.tv_sec*1000*1000 + tm2.tv_nsec/1000 ));
+
+	printk("dma cpy time:%d\n", difftm1);
+	//for(i = 0; i< 1000000;i++)
+		//printk("%u " ,((u32 *)((unsigned int)g_fpga_dev->rbcout_addr))[i] );
+	//printk("\n");
+
+	ret = 0;
+err:
+	return ret;
+
+
+}
+
+
+
 static irqreturn_t gpmc_fpga_rbc_irq(int irq, void *dev_id)
 {
 	struct fpga_dev *priv = dev_id;
@@ -787,6 +868,8 @@ irq_out:
 	return IRQ_HANDLED;
 }
 
+
+#if 1
 static void fpga_fifo_rbc_work(struct work_struct  *work)
 {
 	struct fpga_dev *priv = container_of(work, struct fpga_dev, fifo_rbc);
@@ -809,6 +892,8 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 			return ;
 	}
 
+	printk("rbc_work\n");
+
 	
 	//unsigned int to = (unsigned int)buf;
 
@@ -817,8 +902,6 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 		rbc_fisrt_flag= 0;
 	}
 		
-	printk("rbc_work\n");
-	
 	rbc_status =  fpga_read_reg(priv,FPGA_FIFO_RBC_STATUS); //read sysinfo data len;
 	if(rbc_status != NULL){
 		if(unlikely(rbc_status & BIT_MASK(FPGA_FIFO_RBC_STATUS_FIFO_FULL_BIT))) {
@@ -859,7 +942,7 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 	
 
 	ret = fpga_rbc_dma_transfer(priv, tmp_dma_dst, dma_src, xfer_len);
-	getnstimeofday(&tm3);	
+	//getnstimeofday(&tm3);	
 	//usleep_range(10000,11000); 
 
 
@@ -886,26 +969,37 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 #endif
 
 
-	fpga_write_reg(g_fpga_dev, 0x40004, 0); 
-	fpga_write_reg(g_fpga_dev, 0x40002, 0);
 
 
 #if  1
 	if(g_fpga_dev->pmri == NULL)
 		g_fpga_dev->pmri = &mri;
+	
+	fpga_write_reg(g_fpga_dev, 0x40004, 0); 
+	fpga_write_reg(g_fpga_dev, 0x40002, 0);
 
 	
 	//if(per_len >  50 /*&& !atomic_read(&priv->fifo_rbc_t)*/) { //2k fifo data per/time to send to userspace;
 	if(rbc_per_len >  FIFO_DATA_SEND_MAX_SIZE  ||(rbc_end_rpt_flag == 1 && rbc_per_len!=0)/*&& !atomic_read(&priv->fifo_rbc_t)*/) { //2k fifo data per/time to send to userspace;
 		//printk("rbc per_len:%d \n", rbc_per_len);
-		encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_RBC,g_fpga_dev->pmri, (char *)priv->rbcout_addr, rbc_per_len*sizeof(u16));
-		//usleep_range(600,700); 
+		getnstimeofday(&tm4);	
+		encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_RBC,g_fpga_dev->pmri, (char *)priv->rbcout_addr, rbc_per_len*sizeof(u16));		
+		getnstimeofday(&tm5);	
+		
+		diffcpy =  ((tm5.tv_sec*1000*1000 + tm5.tv_nsec/1000 ) -	(tm4.tv_sec*1000*1000 + tm4.tv_nsec/1000 ));
+		rbc_cpy_time[cpycnt] = rbc_per_len;
+		rbc_cpy_time[cpycnt+1] = diffcpy;
+		cpycnt +=2;
+
 		rbc_fisrt_flag = 1;
 		rbc_per_len = 0;
 		end_rpt_flag = 0;
+		
 	}
 #endif
-	
+
+	getnstimeofday(&tm3);	
+
 	difftm1 =  ((tm2.tv_sec*1000*1000 + tm2.tv_nsec/1000 ) -	(tm1.tv_sec*1000*1000 + tm1.tv_nsec/1000 ));
 	difftm2 =  ((tm3.tv_sec*1000*1000 + tm3.tv_nsec/1000 ) -	(tm2.tv_sec*1000*1000 + tm2.tv_nsec/1000 ));
 	rbctime[intcnt-2] = difftm1;
@@ -914,10 +1008,37 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 
 	rbc_total +=  2*xfer_len;
 
+
+
 	//printk("rbc_work end\n");
 
 }
+#else
 
+static void fpga_fifo_rbc_work(struct work_struct  *work)
+{
+	struct fpga_dev *priv = container_of(work, struct fpga_dev, fifo_rbc);
+	struct dma_async_tx_descriptor *dma_desc;
+	dma_addr_t dma_src = priv->phys_addr + 2*FPGA_FIFO_RBC_ADDR;
+	size_t xfer_len;
+	int ret,i;
+	u16 rbc_status;
+	unsigned short *buf;
+	static u32 tmp_dma_dst=0;
+	int end_rpt_flag=0, full_flag=0;
+	struct measure_related_info mri;
+
+
+	//getnstimeofday(&tm2);	
+	xfer_len = 5000000;
+
+	ret = fpga_dma_rbc_mcpy_transfer(priv, priv->rbcout_dma_addr,  priv->wbcout_dma_addr, xfer_len*sizeof(u32));
+	
+
+}
+
+
+#endif
 
 static void fpga_fifo_wbc_work(struct work_struct  *work)
 {
@@ -1193,8 +1314,6 @@ static void timing_seq_action_init(void)
 }
 
 
-#if 1
-
 bool fpga_dma_filter_fn(struct dma_chan *chan, void *param)
 {
 	int chan_id = *(unsigned int *)param;
@@ -1215,6 +1334,7 @@ static int fpga_dma_init(struct fpga_dev * priv, int rx_req)
 	struct dma_slave_config conf;
 	unsigned id = 4;
 	unsigned rbc_req = 1, wbc_req=2, diff_req=3;
+
 
 	dma_cap_zero(mask);
 	dma_cap_set(DMA_SLAVE, mask);
@@ -1291,12 +1411,12 @@ static int fpga_dma_init(struct fpga_dev * priv, int rx_req)
 	printk("priv->diffout_addr:0x%x   diffout_dma_addr:0x%x\n", priv->diffout_addr, priv->diffout_dma_addr);
 
 	printk("fpga dma register success\n");
+
 	return 0;
+	
 }
-#else
 
-
-static int fpga_dma_init(struct fpga_dev * priv, int datatype)
+static int fpga_dma_memcpy_init(struct fpga_dev * priv, int datatype)
 {
 	dma_cap_mask_t mask;
 	int ret;
@@ -1309,52 +1429,57 @@ static int fpga_dma_init(struct fpga_dev * priv, int datatype)
 
 	dma_cap_set(DMA_MEMCPY, mask);
 
-			
 
 	/* Get control of DMA channel #0 */
-	priv->fpga_dma_chan = dma_request_channel(mask, NULL, NULL);
-	if (!priv->fpga_dma_chan) {
+	priv->fpga_rbc_dma_chan = dma_request_channel(mask, NULL, NULL);
+	if (!priv->fpga_rbc_dma_chan) {
 		dev_err(priv->dev, "Unable to acquire DMA channel #0\n");
 		return  -ENODEV;
 	}
-	printk("fpga_dma_chan:0x%x\n", priv->fpga_dma_chan);
+	printk("rbc->rx_chan:%d\n", priv->fpga_rbc_dma_chan->chan_id);
 	
-	priv->rbcout_addr = (u16 *)kzalloc(SYS_DATA_DMA_SIZE *sizeof(u16), GFP_KERNEL);
-	if(!priv->rbcout_addr){
-		dev_err(priv->dev, "dma_alloc_coherent failed\n");			
-		dma_release_channel(priv->fpga_dma_chan);
-		return -ENOMEM;
+
+	priv->rbcout_addr = dma_alloc_coherent(priv->fpga_rbc_dma_chan->device->dev, FIFO_DATA_DMA_SIZE*sizeof(u16),
+					&priv->rbcout_dma_addr,  GFP_KERNEL|GFP_DMA);
+
+	if (!priv->rbcout_addr) {
+		dev_err(priv->dev,
+			"dma_alloc_coherent  rbcout_addr falied, using PIO mode\n");
+		dma_release_channel(priv->fpga_rbc_dma_chan);
 	}
 
-#if 0
-	 priv->rbcout_addr = dma_alloc_coherent(priv->dev, SYS_DATA_DMA_SIZE*sizeof(u16), &priv->rbcout_dma_addr, GFP_KERNEL);
-	//printk("dma_alloc: pdma_addr[%d]:0x%x\n",i, pdma_addr[i]);
-	if(!priv->rbcout_addr){
-		dev_err(priv->dev, "dma_alloc_coherent failed\n");			
-		dma_release_channel(priv->fpga_dma_chan);
-		return -ENOMEM;
+	printk("priv->rbcout_addr:0x%x   rbcout_dma_addr:0x%x\n", priv->rbcout_addr, priv->rbcout_dma_addr);
+
+
+	priv->wbcout_addr = dma_alloc_coherent(priv->fpga_rbc_dma_chan->device->dev, FIFO_DATA_DMA_SIZE*sizeof(u16),
+					&priv->wbcout_dma_addr,  GFP_KERNEL|GFP_DMA);
+
+	if (!priv->wbcout_addr) {
+		dev_err(priv->dev,
+			"dma_alloc_coherent wbcout_addr falied, using PIO mode\n");
+		dma_release_channel(priv->fpga_rbc_dma_chan);
 	}
 
-	conf.direction = DMA_DEV_TO_MEM;
-	dmaengine_slave_config(priv->fpga_dma_chan, &conf);
+	printk("priv->wbcout_addr:0x%x   wbcout_dma_addr:0x%x\n", priv->wbcout_addr, priv->wbcout_dma_addr);
 
-	priv->rbcout_per_buf = (u16 *)kzalloc(FIFO_DATA_SEND_MAX_SIZE * sizeof(u16),GFP_KERNEL);
-	if(!priv->rbcout_per_buf){
-		dev_err(priv->dev, "kzalloc failed\n");			
-		return -ENOMEM;
+
+	priv->diffout_addr = dma_alloc_coherent(priv->fpga_rbc_dma_chan->device->dev, FIFO_DATA_DMA_SIZE*sizeof(u16),
+					&priv->diffout_dma_addr,  GFP_KERNEL|GFP_DMA);
+
+	if (!priv->diffout_addr) {
+		dev_err(priv->dev,
+			"dma_alloc_coherent opt_fsout_addr falied, using PIO mode\n");
+		dma_release_channel(priv->fpga_rbc_dma_chan);
 	}
-	//init_completion(&sysinfo_wait);
+	printk("priv->diffout_addr:0x%x   diffout_dma_addr:0x%x\n", priv->diffout_addr, priv->diffout_dma_addr);
 
-	//dma config setting;
-	//priv->dma_sconfig.src_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
-	//priv->dma_sconfig.dst_addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
-#endif	
+
+
 	printk("fpga dma register success\n");
 	return 0;
 }
 
 
-#endif
 
 
 /*
@@ -1774,13 +1899,17 @@ static int gpmc_fpga_of_probe(struct platform_device *op)
 	/* set fpga work sequence time,in read caller */
 	//INIT_WORK(&priv->sys_float, fpga_sys_float_work);
 
-	printk("111111\n");
+
 	ret = fpga_dma_init(priv,0);
 	if(ret != 0){
 		dev_err(priv->dev, "Register DMA  Failed\n");
 		goto out_destroy_workqueue;
 	}
-	printk("22222\n");
+
+
+
+	//fpga_dma_memcpy_init(priv,0);
+		
 
 	fpga_timer_init(priv);
 
@@ -1830,7 +1959,7 @@ static int gpmc_fpga_of_probe(struct platform_device *op)
 	//fpga_write_reg(g_fpga_dev, 0x40004, 0xff);
 
 	priv->sche_wa_flga=1;	
-	queue_work(priv->wqfifo,&priv->fifo_rbc); //read wq to handle dma data;
+	//queue_work(priv->wqfifo,&priv->fifo_rbc); //read wq to handle dma data;
 
 	printk("11111\n");
 
@@ -2193,6 +2322,26 @@ exit_thread:
 	printk("rbc_irq:%d  rbc_total:%d\n", rbc_irq, rbc_total);
 	printk("wbc_irq:%d  wbc_total:%d\n", wbc_irq, wbc_total);
 	printk("diff_irq:%d  diff_total:%d\n", diff_irq, diff_total);
+
+	
+	printk("rbctime sch:dmatime\n");
+
+	for(i = 0, j=0; i< intcnt; ) {
+		printk("%d : %d-%d  \n",rbctime[i], rbctime[i+1], rbc_xfer_len[j]);
+		if((i+1)/2 == 0)
+			printk("\n");	
+		i +=2;
+		j++;
+	}
+
+	printk("rbc copy time:\n");
+	for(i = 0; i< cpycnt; ) {
+		printk("%d : %d \n",rbc_cpy_time[i], rbc_cpy_time[i+1] );
+		if((i+1)/2 == 0)
+			printk("\n");	
+		i +=2;
+	}
+	printk("\n");		
 
 	//fpga_info(("\tfpga_timseq_thread (pid:%d) end....",current->pid));
 	
