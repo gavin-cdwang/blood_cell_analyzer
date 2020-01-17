@@ -58,7 +58,7 @@
 #define FIFO_DATA_SEND_MAX_SIZE    1000*80 //1000*150 //7000 // 2048*1024 //max fifo size
 
 
-#define FIFO_DATA_DMA_SIZE 1024*1000*10//3000*1024//2048 //max fifo size
+#define FIFO_DATA_DMA_SIZE 1024*1000*13//3000*1024//2048 //max fifo size
 
 #define SYS_DATA_DMA_SIZE  2000//2048 //max fifo size
 

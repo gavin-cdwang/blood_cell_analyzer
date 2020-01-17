@@ -709,7 +709,7 @@ static irqreturn_t gpmc_fpga_rbc_irq(int irq, void *dev_id)
 	int sys_gcnt_flag, rbc_end_flag;
 	u16 rbc_status;
 
-	//printk("gpmc_fpga_rbc_irq\n");
+	printk("gpmc_fpga_rbc_irq\n");
 	rbc_irq++;
 
 	priv->test_flag = 0;
@@ -738,17 +738,19 @@ static irqreturn_t gpmc_fpga_rbc_irq(int irq, void *dev_id)
 			queue_work(priv->wqfifo,&priv->fifo_rbc); //read wq to handle dma data;
 				priv->test_flag = 1;
 		}else{
-			fpga_info(("interrupt source NULL flag"));	
-			fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_MASK, 0);
+			printk("interrupt source other bitmask flag");	
 			fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_SOURCE, 0);
+			fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_MASK, 0);
+
 
 		}
 			
 	}else{
-		fpga_info(("int1_rbc == NULL\n"));		
+		printk("int1_rbc == NULL\n");		
 		intcnt -= 2;
-		fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_MASK, 0);
 		fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_SOURCE, 0);
+		fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_MASK, 0);
+	
 
 	}
 
@@ -883,8 +885,8 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 	int end_rpt_flag=0, full_flag=0;
 	struct measure_related_info mri;
 
-
 	getnstimeofday(&tm2);	
+
 
 	if(priv->sche_wa_flga== 1){
 			printk("probe workaround for schedle time long\n");
@@ -892,7 +894,7 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 			return ;
 	}
 
-	printk("rbc_work\n");
+	//printk("rbc_work\n");
 
 	
 	//unsigned int to = (unsigned int)buf;
@@ -905,14 +907,15 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 	rbc_status =  fpga_read_reg(priv,FPGA_FIFO_RBC_STATUS); //read sysinfo data len;
 	if(rbc_status != NULL){
 		if(unlikely(rbc_status & BIT_MASK(FPGA_FIFO_RBC_STATUS_FIFO_FULL_BIT))) {
-			//printk("FPGA_FIFO_RBC_STATUS_FIFO_FULL_BIT\n");
+			printk("FPGA_FIFO_RBC_STATUS_FIFO_FULL_BIT\n");
 			xfer_len = 8000;
 			//printk("xfer_len:%d\n", xfer_len);
 			//return;
 		}else if(unlikely(rbc_status & BIT_MASK(FPGA_FIFO_RBC_STATUS_FIFO_EMP_BIT))) {
 			//printk("FPGA_FIFO_RBC_STATUS_FIFO_EMP_BIT priv->test_flag =%d\n", priv->test_flag);
-			fpga_write_reg(g_fpga_dev, 0x40004, 0);	
-			fpga_write_reg(g_fpga_dev, 0x40002, 0);
+			fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_SOURCE, 0);
+			fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_MASK, 0);
+
 			end_rpt_flag = 1;
 			xfer_len = 0;
 			//return;
@@ -923,8 +926,9 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 		}
 	}else{
 		printk("rbc_status == NULL\n");
-		fpga_write_reg(g_fpga_dev, 0x40004, 0);	
-		fpga_write_reg(g_fpga_dev, 0x40002, 0);
+		fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_SOURCE, 0);
+		fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_MASK, 0);
+
 		return ;
 	}
 
@@ -976,19 +980,20 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 		g_fpga_dev->pmri = &mri;
 	
 
+	getnstimeofday(&tm3);	
 
 	
 	//if(per_len >  50 /*&& !atomic_read(&priv->fifo_rbc_t)*/) { //2k fifo data per/time to send to userspace;
-	if(rbc_per_len >  FIFO_DATA_SEND_MAX_SIZE  ||(rbc_end_rpt_flag == 1 && rbc_per_len!=0)/*&& !atomic_read(&priv->fifo_rbc_t)*/) { //2k fifo data per/time to send to userspace;
-		//printk("rbc per_len:%d \n", rbc_per_len);
-		getnstimeofday(&tm4);	
-		encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_RBC,g_fpga_dev->pmri, (char *)priv->rbcout_addr, rbc_per_len*sizeof(u16));		
-		getnstimeofday(&tm5);	
+	if(/*rbc_per_len >  FIFO_DATA_SEND_MAX_SIZE  ||*/(rbc_end_rpt_flag == 1 && rbc_per_len!=0)/*&& !atomic_read(&priv->fifo_rbc_t)*/) { //2k fifo data per/time to send to userspace;
+		printk("rbc per_len:%d \n", rbc_per_len);
+		//getnstimeofday(&tm4);	
+		//encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_RBC,g_fpga_dev->pmri, (char *)priv->rbcout_addr, rbc_per_len*sizeof(u16));		
+		//getnstimeofday(&tm5);	
 		
-		diffcpy =  ((tm5.tv_sec*1000*1000 + tm5.tv_nsec/1000 ) -	(tm4.tv_sec*1000*1000 + tm4.tv_nsec/1000 ));
-		rbc_cpy_time[cpycnt] = rbc_per_len;
-		rbc_cpy_time[cpycnt+1] = diffcpy;
-		cpycnt +=2;
+		//diffcpy =  ((tm5.tv_sec*1000*1000 + tm5.tv_nsec/1000 ) -	(tm4.tv_sec*1000*1000 + tm4.tv_nsec/1000 ));
+		//rbc_cpy_time[cpycnt] = rbc_per_len;
+		//rbc_cpy_time[cpycnt+1] = diffcpy;
+		//cpycnt +=2;
 
 		rbc_fisrt_flag = 1;
 		rbc_per_len = 0;
@@ -997,10 +1002,6 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 	}
 #endif
 
-	fpga_write_reg(g_fpga_dev, 0x40004, 0); 
-	fpga_write_reg(g_fpga_dev, 0x40002, 0);
-
-	getnstimeofday(&tm3);	
 
 	difftm1 =  ((tm2.tv_sec*1000*1000 + tm2.tv_nsec/1000 ) -	(tm1.tv_sec*1000*1000 + tm1.tv_nsec/1000 ));
 	difftm2 =  ((tm3.tv_sec*1000*1000 + tm3.tv_nsec/1000 ) -	(tm2.tv_sec*1000*1000 + tm2.tv_nsec/1000 ));
@@ -1009,12 +1010,14 @@ static void fpga_fifo_rbc_work(struct work_struct  *work)
 	rbc_xfer_len[rbc_irq-1] = xfer_len;
 
 	rbc_total +=  2*xfer_len;
-
-
-
+	
+	fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_SOURCE, 0);
+	fpga_write_reg(g_fpga_dev, FPGA_INTER_RBC_MASK, 0);
+	
 	//printk("rbc_work end\n");
 
 }
+
 #else
 
 static void fpga_fifo_rbc_work(struct work_struct  *work)
@@ -1109,15 +1112,12 @@ static void fpga_fifo_wbc_work(struct work_struct  *work)
 	if(g_fpga_dev->pmri == NULL)
 		g_fpga_dev->pmri = &mri;
 
-	fpga_write_reg(g_fpga_dev, FPGA_INTER_WBC_SOURCE, 0); 
-	fpga_write_reg(g_fpga_dev, FPGA_INTER_WBC_MASK, 0);
-	
 
 	
 	//if(per_len >  50 /*&& !atomic_read(&priv->fifo_rbc_t)*/) { //2k fifo data per/time to send to userspace;
-	if(wbc_per_len >  FIFO_DATA_SEND_MAX_SIZE  ||(wbc_end_rpt_flag == 1 && wbc_per_len!=0)/*&& !atomic_read(&priv->fifo_rbc_t)*/) { //2k fifo data per/time to send to userspace;
-		//printk("wbc per_len:%d \n", per_len);
-		encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_WBC,g_fpga_dev->pmri, (char *)priv->wbcout_addr, wbc_per_len*sizeof(u16));
+	if(/*wbc_per_len >  FIFO_DATA_SEND_MAX_SIZE  ||*/(wbc_end_rpt_flag == 1 && wbc_per_len!=0)/*&& !atomic_read(&priv->fifo_rbc_t)*/) { //2k fifo data per/time to send to userspace;
+		printk("wbc per_len:%d \n", wbc_per_len);
+		//encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_WBC,g_fpga_dev->pmri, (char *)priv->wbcout_addr, wbc_per_len*sizeof(u16));
 		wbc_fisrt_flag = 1;
 		wbc_per_len = 0;
 		end_rpt_flag = 0;
@@ -1125,6 +1125,10 @@ static void fpga_fifo_wbc_work(struct work_struct  *work)
 #endif
 
 	wbc_total +=  2*xfer_len;
+
+	fpga_write_reg(g_fpga_dev, FPGA_INTER_WBC_SOURCE, 0); 
+	fpga_write_reg(g_fpga_dev, FPGA_INTER_WBC_MASK, 0);
+	
 	//printk("wbc_work end\n");
 
 }
@@ -1963,7 +1967,7 @@ static int gpmc_fpga_of_probe(struct platform_device *op)
 	//fpga_write_reg(g_fpga_dev, 0x40004, 0xff);
 
 	priv->sche_wa_flga=1;	
-	//queue_work(priv->wqfifo,&priv->fifo_rbc); //read wq to handle dma data;
+	queue_work(priv->wqfifo,&priv->fifo_rbc); //read wq to handle dma data;
 
 	printk("11111\n");
 
@@ -2216,7 +2220,7 @@ int fpga_exec_functs_thread(void *p)
 	
 	int ts_cnt;
 	
-	struct sched_param param = {  .sched_priority = 1 };
+	struct sched_param param = {  .sched_priority = 2 };
 
 	//struct task_struct *cmd_thread[30];
 
@@ -2276,7 +2280,7 @@ int fpga_exec_functs_thread(void *p)
 			return ret;
 		}
 		
-		sched_setscheduler(ts_thread[i], SCHED_RR,  &param);
+		sched_setscheduler(ts_thread[i], SCHED_FIFO,  &param);
 
 		i++;
 		
@@ -2327,7 +2331,7 @@ exit_thread:
 	printk("wbc_irq:%d  wbc_total:%d\n", wbc_irq, wbc_total);
 	printk("diff_irq:%d  diff_total:%d\n", diff_irq, diff_total);
 
-#if 0	
+#if 0
 	printk("rbctime sch:dmatime\n");
 
 	for(i = 0, j=0; i< intcnt; ) {
@@ -2337,7 +2341,9 @@ exit_thread:
 		i +=2;
 		j++;
 	}
+#endif
 
+#if 0
 	printk("rbc copy time:\n");
 	for(i = 0; i< cpycnt; ) {
 		printk("%d : %d \n",rbc_cpy_time[i], rbc_cpy_time[i+1] );

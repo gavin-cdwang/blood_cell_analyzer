@@ -475,7 +475,7 @@
 		#clock-cells = <0>;
 		compatible = "fixed-factor-clock";
 		clocks = <&dpll_core_m4_div2_ck>;
-		clock-mult = <2>;
+		clock-mult = <1>;
 		clock-div = <1>;
 	};
 

@@ -214,7 +214,7 @@ int gpmc_fpga_rbc_fifo_enable(struct fpga_dev * priv, int time_delay)
 	
 	time_l = tick& 0xffff;
 	time_h = (tick & 0xffff0000) >> 16 ;
-	printk("time_l:0x%x  time_h:0x%x \n", time_l, time_h);
+	//printk("time_l:0x%x  time_h:0x%x \n", time_l, time_h);
 	
 	fpga_write_reg(priv,FPGA_FIFO_RBC_SAMPTIME_L, time_l);
 	fpga_write_reg(priv,FPGA_FIFO_RBC_SAMPTIME_H, time_h);
@@ -253,7 +253,7 @@ int gpmc_fpga_wbc_fifo_enable(struct fpga_dev * priv, int time_delay)
 	
 	tick = time_delay * 90000;
 	
-	printk("%s:time:%dms  tick:0x%x \n", __func__, time_delay, tick);
+	//printk("%s:time:%dms  tick:0x%x \n", __func__, time_delay, tick);
 	
 	time_l = tick& 0xffff;
 	time_h = (tick & 0xffff0000) >> 16 ;
@@ -1212,7 +1212,7 @@ void comm_motor_init(int dev_no, int speed)
 	
 	init_pos_step = get_main_motor_pos_speed(dev_no, 0);
 
-	main_pre_steps[dev_no] = init_pos_step;  //for eng maintaince
+	main_pre_steps[dev_no] = 0;  //for eng maintaince
 
 	fpga_info(("%s:main_pre_steps[%d]=%d", __func__, dev_no, main_pre_steps[dev_no] ));
 
@@ -1344,7 +1344,7 @@ void comm_inj_motor_init(int dev_no, int speed)
 	inj_current_pos = 0; //for eng matain use;
 	init_pos_step = get_inj_motor_pos_speed(dev_no, 0);
 
-	inj_pre_steps[dev_no] = init_pos_step;  //for eng maintaince
+	inj_pre_steps[dev_no] = 0;  //for eng maintaince
 
 	abs_steps[dev_no]=0;
 	
@@ -1679,26 +1679,14 @@ extern int lenarr[10], timearr[10], difftm1, difftm2, intcnt;
 
 static enum hrtimer_restart fifo_rbc_timer_handler(struct hrtimer *hrtimer)
 {
+
 	struct fpga_dev *pdev = container_of(hrtimer, struct fpga_dev, fifo_rbc_timer);
 
 	fpga_info(("\n%s: rbc sample end\n",  __func__));
-	int i;
+	int i,j;
 
-#if 0
-	for(i=0;i<6;i++)
-		printk("%d ", lenarr[i]);
-	printk("\n");
 
-	printk(" dma time diff && work_sch\n");
 
-	for(i=0; i< 8; i++)
-		printk("%d ", timearr[i]);
-	
-	printk("\n");
-	
-	printk(" dma time diff =%ld work_sch:%ld us\n",  ((tm3.tv_sec*1000*1000 + tm3.tv_nsec/1000 ) -	(tm1.tv_sec*1000*1000 + tm1.tv_nsec/1000 )), ((tm2.tv_sec*1000*1000 + tm2.tv_nsec/1000 ) -	(tm1.tv_sec*1000*1000 + tm1.tv_nsec/1000 )));
-
-#endif
 
 		//disable rbc sample
 	//fpga_write_reg(g_fpga_dev, FPGA_FIFO_RBC_START, 0);
@@ -1706,6 +1694,23 @@ static enum hrtimer_restart fifo_rbc_timer_handler(struct hrtimer *hrtimer)
 	//fpga_disable_irq(g_fpga_dev); //diable irq ,so we can do not use spin_lock to enable preempt;
 	//pdev->pmri->m_unique_key = 536870931;
 	atomic_set(&g_fpga_dev->fifo_rbc_t,0);
+
+#if 0			
+	printk("rbc_irq:%d	rbc_total:%d\n", rbc_irq, rbc_total);
+	printk("wbc_irq:%d	wbc_total:%d\n", wbc_irq, wbc_total);
+	printk("diff_irq:%d  diff_total:%d\n", diff_irq, diff_total);
+		
+
+	printk("rbctime sch:dmatime-xferlen\n");
+		
+	for(i = 0, j=0; i< intcnt; ) {
+		printk("%d : %d-%d	\n",rbctime[i], rbctime[i+1], rbc_xfer_len[j]);
+		if((i+1)/2 == 0)
+			printk("\n");	
+		i +=2;
+		j++;
+	}
+#endif
 
 		
 	return HRTIMER_NORESTART;
@@ -2447,12 +2452,12 @@ void fpga_get_hgb_blank(u16 dev_no, u16 timout, int action, int p1, int p2, int 
 	fpga_info(("fpga_get_hgb_blank"));
 	memset((u8 *)hgb_buf, 0, 20);
 
-	printk("fpga_get_hgb_blank\n");
+	//printk("fpga_get_hgb_blank\n");
 	while(hgb_cnt < HGB_READ_CNT) {
 		value = fpga_read_reg(g_fpga_dev,FPGA_SYS_CHAN_HGB);
 		hgb_buf[hgb_cnt++] = value;		
 		usleep_range(300,400); //A/D change need use 0.016ms * 16ch = 0.3ms;
-		printk("fpga_get_hgb_blank:%d \n", value);
+		//printk("fpga_get_hgb_blank:%d \n", value);
 	}
 
 	encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_HGB,mri, hgb_buf,HGB_READ_CNT*2);
@@ -2467,7 +2472,7 @@ void fpga_get_hgb_blood(u16 dev_no, u16 timout, int action, int p1, int p2, int 
 
 	fpga_info(("fpga_get_hgb_blood"));
 
-	printk("fpga_get_hgb_blood\n");
+	//printk("fpga_get_hgb_blood\n");
 	memset((u8 *)hgb_buf, 0, 20);
 #if 1
 	while(hgb_cnt < HGB_READ_CNT) {
@@ -2475,7 +2480,7 @@ void fpga_get_hgb_blood(u16 dev_no, u16 timout, int action, int p1, int p2, int 
 		hgb_buf[hgb_cnt++] = value;		
 		usleep_range(300,400); //A/D change need use 0.016ms * 16ch = 0.3ms;
 		
-		printk("%d \n", value);
+		//printk("%d \n", value);
 	}
 #endif	
 	encode_tlv_netlink_send_data_rpt(MSG_DATA_REPORT, SUBTYPE_DATA_REPORT_HGB,mri, hgb_buf,HGB_READ_CNT*2 );
@@ -2523,7 +2528,7 @@ void fpga_get_fifo_rbc(u16 dev_no, u16 timout, int action, int p1, int p2, int p
 
 	gpmc_fpga_rbc_fifo_enable(g_fpga_dev, timout);
 
-	hrtimer_start(&g_fpga_dev->fifo_rbc_timer, ms_to_ktime(timout), HRTIMER_MODE_REL);
+	hrtimer_start(&g_fpga_dev->fifo_rbc_timer, ms_to_ktime(timout+1000), HRTIMER_MODE_REL);
 	
 }
 
@@ -2532,6 +2537,8 @@ void fpga_get_fifo_wbc(u16 dev_no, u16 timout, int action, int p1, int p2, int p
 {
 	u16 value,diff_cnt=0;
 
+
+	
 	fpga_info(("fpga_get_fifo_wbc:timout:%d devno:%d",timout, dev_no));
 
 	//enable sys chan  interrupt;
@@ -3045,7 +3052,6 @@ void fpga_ctrltype_set_temp(struct range_info *pri)
 	 u16 reg_temp, reg_en, target;
 	 u32 reg;
 
-	fpga_info(("%s: id=%d  temp_target:%d  min:%d  max:%d", __func__, pri->m_id, pri->m_target, pri->m_min, pri->m_max));	 
 	switch(pri->m_id) {
 		case 1:
 			reg_temp = HEAT_DIFF_TEMP;
@@ -3068,6 +3074,8 @@ void fpga_ctrltype_set_temp(struct range_info *pri)
 			reg_temp = FPGA_SYS_CHAN_TEMP6;
 			break;
 	}
+
+	printk("%s: id=%d  temp_target:%d  min:%d  max:%d reg_en:0x%x  reg_temp:0x%x\n", __func__, pri->m_id, pri->m_target, pri->m_min, pri->m_max, reg_en, reg_temp);	 
 
 	fpga_write_reg(g_fpga_dev, reg_en, 1);
 	

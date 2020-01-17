@@ -1401,26 +1401,26 @@
 		//gpmc,sync-clk-ps = <10000>;
 		
 		gpmc,cs-on-ns = <0>;
-		gpmc,cs-rd-off-ns = <70>;
-		gpmc,cs-wr-off-ns = <60>;
+		gpmc,cs-rd-off-ns = <80>;
+		gpmc,cs-wr-off-ns = <80>;
 		gpmc,adv-on-ns = <0>;
 		gpmc,adv-rd-off-ns = <30>;
 		gpmc,adv-wr-off-ns = <30>;
 		gpmc,we-on-ns = <30>;
-		gpmc,we-off-ns = <60>;
+		gpmc,we-off-ns = <70>;
 		gpmc,oe-on-ns = <30>;
-		gpmc,oe-off-ns = <70>;
-		gpmc,access-ns = <60>;
-		gpmc,rd-cycle-ns = <70>;
-		gpmc,wr-cycle-ns = <60>;
+		gpmc,oe-off-ns = <70>; //80
+		gpmc,access-ns = <70>;
+		gpmc,rd-cycle-ns = <80>;
+		gpmc,wr-cycle-ns = <80>;
 		
 		//gpmc,bus-turnaround-ns = <0>;
 		gpmc,cycle2cycle-delay-ns = <20>;
-		gpmc,cycle2cycle-samecsen = <10>;
+		gpmc,cycle2cycle-samecsen = <20>;
 		gpmc,cycle2cycle-diffcsen = <0>;
-		gpmc,wr-access-ns = <60>; //?
-		gpmc,wr-data-mux-bus-ns = <30>;
-		gpmc,page-burst-access-ns = <10>;
+		gpmc,wr-access-ns = <50>; //?
+		gpmc,wr-data-mux-bus-ns = <40>;
+		gpmc,page-burst-access-ns = <20>;
 				
 		#address-cells = <1>;
 		#size-cells = <1>;
